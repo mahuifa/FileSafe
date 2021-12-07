@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>image/close.png</file>
+        <file>image/min.png</file>
+        <file>image/Safe.png</file>
+        <file>image/Safe.ico</file>
+    </qresource>
+</RCC>
