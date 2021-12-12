@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QImage>
 #include <qcryptographichash.h>
 #include <qdebug.h>
 #include <qfile.h>
@@ -17,21 +18,19 @@ FileEncryption::FileEncryption(QObject *parent) : QObject(parent)
 }
 
 /**
- * @brief        设置原文件和加密文件路径
- * @param src    原文件
- * @param encod  加密文件
+ * @brief         设置输入输出文件路径
+ * @param strIn   输入文件路径
+ * @param strOut  输出文件路径
  */
-void FileEncryption::setFile(const QString &src, const QString &encod)
+void FileEncryption::setFile(const QString& strIn, const QString& strOut)
 {
-    if(!src.isEmpty() && !encod.isEmpty())
+    if(!strIn.isEmpty() && !strOut.isEmpty())
     {
-        this->m_strSrc = src;
-        this->m_strEncod = encod;
+        this->m_strIn = strIn;
+        this->m_strOut = strOut;
 
-        QFileInfo info(src);
-        m_SrcName = info.completeBaseName();
-        info.setFile(encod);
-        m_encodName = info.completeBaseName();
+        QFileInfo info(strIn);
+        m_fileSuffix = info.suffix();
     }
 }
 
@@ -64,26 +63,6 @@ void FileEncryption::setAESParameter(QAESEncryption::Aes aes, QAESEncryption::Mo
     this->m_aes = aes;
     this->m_mode = mode;
     this->m_padding = padding;
-
-    switch (aes)
-    {
-    case QAESEncryption::AES_128:
-        m_len = 16 * 20;
-        break;
-    case QAESEncryption::AES_192:
-        m_len = 24 * 20;
-        break;
-    case QAESEncryption::AES_256:
-        m_len = 32 * 20;
-        break;
-    default:
-        break;
-    }
-}
-
-void FileEncryption::stop()
-{
-    this->m_run = false;
 }
 
 /**
@@ -91,16 +70,28 @@ void FileEncryption::stop()
  */
 void FileEncryption::startEncryption()
 {
-    m_dataIn.clear();
-    m_dataPut.clear();
-    m_run = true;
-    if(m_encryption)
+    clear();
+    emit showLog("开始输入原文件！");
+    if(readFile(m_strIn))
     {
-        encryption();
+        emit showLog("文件读取完成！");
+        if(m_encryption)
+        {
+            encryption();
+        }
+        else
+        {
+            decrypt();
+        }
+        if(writeFile(m_strOut))
+        {
+            emit showLog("数据写入成功！");
+        }
+        clear();
     }
     else
     {
-        decrypt();
+        emit showLog("输入文件读取失败！");
     }
 }
 
@@ -109,50 +100,22 @@ void FileEncryption::startEncryption()
  */
 void FileEncryption::encryption()
 {
-    emit showLog("开始读取原文件！");
-    if(ReadFile(m_strSrc))
+    QAESEncryption encryption(m_aes, m_mode, m_padding);
+    emit showLog("开始加密！");
+
+    if(m_mode == QAESEncryption::ECB)
     {
-        emit showLog("原文件读取完成！");
-        emit showLog("开始计算md5！");
-        m_key = QCryptographicHash::hash(m_dataIn, QCryptographicHash::Md5).toHex();
-        emit showLog("md5计算完成！");
-        if(WriteFile(QString("./key/%1.key").arg(m_SrcName), m_key))
-        {
-            emit showLog("生成密钥文件！");
-        }
-        else
-        {
-            emit showLog("密钥文件生成失败！");
-            return;
-        }
-
-        QAESEncryption encryption(m_aes, m_mode, m_padding);
-
-        emit showLog("开始加密！");
-        qint64 totalLen = m_dataIn.count();
-        qint64 currentLen = 0;
-        while (m_dataIn.count() && this->m_run)
-        {
-            QByteArray arr = m_dataIn.mid(0, m_len);
-            currentLen += arr.count();
-            if(m_mode == QAESEncryption::ECB)
-            {
-                m_dataPut.append(encryption.encode(arr, m_key));
-            }
-            else
-            {
-                 m_dataPut.append(encryption.encode(arr, m_key, m_iv));
-            }
-            m_dataIn.remove(0, m_len);
-            emit complete(currentLen, totalLen);
-        }
-
-        emit showLog("加密完成，开始写入！");
-        if(WriteFile(m_strEncod, m_dataPut))
-        {
-            emit showLog("加密成功！");
-        }
+        m_dataOut.append(encryption.encode(m_dataIn, m_key));
     }
+    else
+    {
+         m_dataOut.append(encryption.encode(m_dataIn, m_key, m_iv));
+    }
+    m_dataOut.insert(0, m_head);
+
+    m_dataOut.append(m_md5);
+    emit showLog("加密完成，开始写入！");
+
 }
 
 /**
@@ -160,62 +123,36 @@ void FileEncryption::encryption()
  */
 void FileEncryption::decrypt()
 {
+    QAESEncryption encryption(m_aes, m_mode, m_padding);
+    emit showLog("开始解密！");
 
-    emit showLog("开始读取加密文件！");
-    if(ReadFile(m_strEncod))
+    if(m_mode == QAESEncryption::ECB)
     {
-        emit showLog("加密文件读取完成！");
-        QAESEncryption encryption(m_aes, m_mode, m_padding);
-        emit showLog("开始解密！");
-
-        qint64 totalLen = m_dataIn.count();
-        qint64 currentLen = 0;
-        while (m_dataIn.count() && this->m_run)
-        {
-            QByteArray arr = m_dataIn.mid(0, m_len);
-            currentLen += arr.count();
-            if(m_mode == QAESEncryption::ECB)
-            {
-                m_dataPut.append(encryption.decode(arr, m_key));
-            }
-            else
-            {
-                 m_dataPut.append(encryption.decode(arr, m_key, m_iv));
-            }
-            m_dataIn.remove(0, m_len);
-            emit complete(currentLen, totalLen);
-        }
-        QByteArray data = encryption.removePadding(m_dataPut);        // 移除填充数据
-
-        emit showLog("解密完成，开始写入！");
-        if(WriteFile(m_strSrc, data))
-        {
-            emit showLog("解密成功！");
-        }
-
-        QByteArray key = QCryptographicHash::hash(data, QCryptographicHash::Md5).toHex();
-        if(m_key == key)
-        {
-            emit showLog("文件未损毁！");
-        }
-        else
-        {
-            emit showLog("解密后文件存在不同，可能已损毁！");
-        }
+        m_dataOut.append(encryption.decode(m_dataIn, m_key));
     }
+    else
+    {
+         m_dataOut.append(encryption.decode(m_dataIn, m_key, m_iv));
+    }
+    m_dataOut = encryption.removePadding(m_dataOut);        // 移除填充数据
+    m_dataOut.insert(0, m_head);
+
+    emit showLog("解密完成，开始写入！");
+    check();
 }
 
 /**
  * @brief           读取文件内容
  * @param fileName
  */
-bool FileEncryption::ReadFile(const QString &fileName)
+bool FileEncryption::readFile(const QString &fileName)
 {
     QFile file(fileName);
     if(file.open(QIODevice::ReadOnly))
     {
         m_dataIn = file.readAll();
         file.close();
+        dataOperation();
         return true;
     }
     else
@@ -226,11 +163,52 @@ bool FileEncryption::ReadFile(const QString &fileName)
 }
 
 /**
+ * @brief 操作数据内容
+ */
+void FileEncryption::dataOperation()
+{
+    // 获取md5值
+    if(m_encryption)
+    {
+        m_md5 = QCryptographicHash::hash(m_dataIn, QCryptographicHash::Md5).toHex();
+    }
+    else                  // 解密时读取md5值
+    {
+        m_md5 = m_dataIn.mid(m_dataIn.count() - 32, 32);
+        m_dataIn.remove(m_dataIn.count() - 32, 32);
+    }
+
+    // 读取bmo文件头信息
+    if(m_fileSuffix.compare("bmp", Qt::CaseInsensitive) == 0)
+    {
+        m_head = m_dataIn.mid(0, 54);        // bmp文件头：共14字节；位图信息头：共40字节；
+        m_dataIn.remove(0, 54);
+    }
+}
+
+/**
+ * @brief  使用md5校验文件是否损毁
+ */
+void FileEncryption::check()
+{
+    QByteArray arr = QCryptographicHash::hash(m_dataOut, QCryptographicHash::Md5).toHex();
+    if(arr == m_md5)
+    {
+        emit showLog("文件未损毁！");
+    }
+    else
+    {
+        emit showLog("文件存在不同，可能已损毁！");
+    }
+}
+
+
+/**
  * @brief           写文件内容
  * @param fileName
  * @param data
  */
-bool FileEncryption::WriteFile(const QString &fileName, const QByteArray &data)
+bool FileEncryption::writeFile(const QString &fileName)
 {
     QFileInfo info(fileName);
     QString filePath = info.absolutePath();
@@ -243,7 +221,7 @@ bool FileEncryption::WriteFile(const QString &fileName, const QByteArray &data)
     QFile file(fileName);
     if(file.open(QIODevice::WriteOnly))
     {
-        file.write(data);
+        file.write(m_dataOut);
         file.close();
         return true;
     }
@@ -252,4 +230,15 @@ bool FileEncryption::WriteFile(const QString &fileName, const QByteArray &data)
         emit showLog(QString("%1打开失败！").arg(fileName));
         return false;
     }
+}
+
+/**
+ * @brief 清空数据
+ */
+void FileEncryption::clear()
+{
+    m_dataIn.clear();
+    m_dataOut.clear();
+    m_head.clear();
+    m_md5.clear();
 }

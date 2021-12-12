@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>645</width>
-    <height>508</height>
+    <height>435</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -179,9 +179,9 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>190</y>
+        <y>160</y>
         <width>291</width>
-        <height>221</height>
+        <height>181</height>
        </rect>
       </property>
       <property name="title">
@@ -198,7 +198,7 @@
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QRadioButton" name="radioButton">
+         <widget class="QRadioButton" name="radio_en">
           <property name="text">
            <string>加密</string>
           </property>
@@ -208,7 +208,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QRadioButton" name="radioButton_2">
+         <widget class="QRadioButton" name="radio_de">
           <property name="text">
            <string>解密</string>
           </property>
@@ -216,13 +216,13 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="layoutWidget">
+      <widget class="QWidget" name="">
        <property name="geometry">
         <rect>
          <x>10</x>
-         <y>70</y>
+         <y>68</y>
          <width>191</width>
-         <height>121</height>
+         <height>91</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_5">
@@ -284,14 +284,14 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLabel" name="label_6">
+         <widget class="QLabel" name="label_8">
           <property name="text">
-           <string>填充方法：</string>
+           <string>密操作模式：</string>
           </property>
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox_fill">
+         <widget class="QComboBox" name="comboBox_Padding">
           <item>
            <property name="text">
             <string>ZERO</string>
@@ -319,17 +319,17 @@
       <property name="geometry">
        <rect>
         <x>320</x>
-        <y>190</y>
+        <y>170</y>
         <width>311</width>
-        <height>221</height>
+        <height>171</height>
        </rect>
       </property>
      </widget>
      <widget class="QPushButton" name="but_start">
       <property name="geometry">
        <rect>
-        <x>150</x>
-        <y>450</y>
+        <x>270</x>
+        <y>370</y>
         <width>75</width>
         <height>23</height>
        </rect>
@@ -338,57 +338,28 @@
        <string>开始</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="but_stop">
-      <property name="geometry">
-       <rect>
-        <x>400</x>
-        <y>450</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>停止</string>
-      </property>
-     </widget>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>420</y>
-        <width>621</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>10</x>
         <y>20</y>
         <width>621</width>
-        <height>141</height>
+        <height>121</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>原文件路径：</string>
+          <string>输入文件：</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit_src"/>
+        <widget class="QLineEdit" name="lineEdit_in"/>
        </item>
        <item row="0" column="2">
-        <widget class="QPushButton" name="but_src">
+        <widget class="QPushButton" name="but_in">
          <property name="text">
           <string>选择文件</string>
          </property>
@@ -397,15 +368,15 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>加密文件路径：</string>
+          <string>输出文件：</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit_put"/>
+        <widget class="QLineEdit" name="lineEdit_out"/>
        </item>
        <item row="1" column="2">
-        <widget class="QPushButton" name="but_put">
+        <widget class="QPushButton" name="but_out">
          <property name="text">
           <string>选择路径</string>
          </property>
@@ -424,14 +395,7 @@
           <string/>
          </property>
          <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPushButton" name="but_key">
-         <property name="text">
-          <string>密钥文件</string>
+          <enum>QLineEdit::Normal</enum>
          </property>
         </widget>
        </item>

@@ -7,5 +7,5 @@ HEADERS += \
 SOURCES += \
     $$PWD/qaesencryption.cpp
 
-#DEFINES += USE_INTEL_AES_IF_AVAILABLE         # 不建议开启，否则性能较低的电脑会直接异常退出
-#QMAKE_CXXFLAGS += -maes
+DEFINES += USE_INTEL_AES_IF_AVAILABLE         # 开启后出现过有些电脑异常退出情况
+QMAKE_CXXFLAGS += -maes

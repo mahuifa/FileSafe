@@ -5,6 +5,7 @@
 #include <qdebug.h>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <qcryptographichash.h>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -18,14 +19,13 @@ Widget::Widget(QWidget *parent)
 
     ui->widget_title->installEventFilter(this);
     m_pointStart = QPoint(0, 0);
-    ui->comboBox_fill->setCurrentIndex(2);
-
     m_fileEncryption = new FileEncryption();
     m_thread = new QThread();
     m_fileEncryption->moveToThread(m_thread);
     m_thread->start();
+
+    ui->comboBox_Padding->setCurrentIndex(2);
     connect(m_fileEncryption, &FileEncryption::showLog, this, &Widget::on_showLog);
-    connect(m_fileEncryption, &FileEncryption::complete, this, &Widget::on_complete);
 }
 
 Widget::~Widget()
@@ -86,83 +86,48 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
 }
 
 
-void Widget::on_but_src_clicked()
+void Widget::on_but_in_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "选择原文件", "./", "文件(*);");
+    QString fileName = QFileDialog::getOpenFileName(this, "选择输入文件", "./", "输入文件(*);");
     if(!fileName.isEmpty())
     {
-        ui->lineEdit_src->setText(fileName);
-        ui->lineEdit_put->setText(fileName + ".en");
+        ui->lineEdit_in->setText(fileName);
+        QFileInfo info(fileName);
+        QString name = info.fileName();
+        QString path = info.canonicalPath();
+        ui->lineEdit_out->setText(path + "/out_" + name);
     }
 }
 
-void Widget::on_but_put_clicked()
+void Widget::on_but_out_clicked()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "选择加密文件路径", ui->lineEdit_put->text(), "加密文件(*.en);");
+    QString fileName = QFileDialog::getSaveFileName(this, "选择输出文件路径", ui->lineEdit_out->text(), "输出文件(*);");
     if(!fileName.isEmpty())
     {
-        ui->lineEdit_put->setText(fileName);
+        ui->lineEdit_out->setText(fileName);
     }
 }
-
-void Widget::on_but_key_clicked()
-{
-    QString fileName = QFileDialog::getOpenFileName(this, "选择密钥文件", "./key", "密钥文件(*.key);");
-    if(!fileName.isEmpty())
-    {
-        QFile file(fileName);
-        if(file.open(QIODevice::ReadOnly))
-        {
-            QByteArray arr = file.readAll();
-            file.close();
-            ui->lineEdit_key->setText(QString(arr));
-        }
-    }
-}
-
 
 void Widget::on_but_start_clicked()
 {
-    m_fileEncryption->setFile(ui->lineEdit_src->text(), ui->lineEdit_put->text());
-
-    bool flag = ui->radioButton_2->isChecked();
-    m_fileEncryption->setEncryption(!flag);
-    if(flag)
+    m_fileEncryption->setFile(ui->lineEdit_in->text(), ui->lineEdit_out->text());
+    m_fileEncryption->setEncryption(!ui->radio_de->isChecked());
+    QByteArray arrkey(ui->lineEdit_key->text().trimmed().toUtf8());
+    if(arrkey.isEmpty())
     {
-        QByteArray key;
-        QString strKey = ui->lineEdit_key->text();
-        if(!strKey.isEmpty())
-        {
-            key.append(strKey);
-        }
-        else
-        {
-            QMessageBox::about(this, "注意！", "未输入密钥。");
-            return;
-        }
-        m_fileEncryption->setKey(key);
+        QMessageBox::about(this, "注意！", "未输入密钥。");
+        return;
     }
+    arrkey = QCryptographicHash::hash(arrkey, QCryptographicHash::Md5).toHex();         // 使用md5适配所有长度的密码，否则如果密码过短会导致解密失败
+    m_fileEncryption->setKey(arrkey);
     m_fileEncryption->setAESParameter((QAESEncryption::Aes)ui->comboBox_len->currentIndex(),
                                       (QAESEncryption::Mode)ui->comboBox_mode->currentIndex(),
-                                      (QAESEncryption::Padding)ui->comboBox_fill->currentIndex());
+                                      (QAESEncryption::Padding)ui->comboBox_Padding->currentIndex());
     emit m_fileEncryption->start();
-}
-
-
-void Widget::on_but_stop_clicked()
-{
-    m_fileEncryption->stop();
 }
 
 void Widget::on_showLog(QString log)
 {
     ui->textEdit_log->append(log);
 }
-
-void Widget::on_complete(qint64 current, qint64 total)
-{
-    ui->progressBar->setMaximum(total);
-    ui->progressBar->setValue(current);
-}
-
 

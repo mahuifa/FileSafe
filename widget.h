@@ -24,25 +24,18 @@ private slots:
     void on_but_min_clicked();
     void on_but_close_clicked();
 
-    void on_but_src_clicked();
+    void on_but_in_clicked();
 
-    void on_but_put_clicked();
-
-    void on_but_key_clicked();
+    void on_but_out_clicked();
 
     void on_but_start_clicked();
 
-    void on_but_stop_clicked();
-
     void on_showLog(QString log);
-
-    void on_complete(qint64 current, qint64 total);
 
 private:
     Ui::Widget *ui;
-    QPoint m_pointStart;
-    FileEncryption* m_fileEncryption = nullptr;
-    QThread* m_thread = nullptr;
-
+    QPoint m_pointStart;                          // 移动窗口时鼠标初始坐标
+    FileEncryption* m_fileEncryption = nullptr;   // 文件加解密对象
+    QThread* m_thread = nullptr;                  // 文件加解密线程
 };
 #endif // WIDGET_H
