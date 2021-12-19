@@ -88,7 +88,7 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
 
 void Widget::on_but_in_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "选择输入文件", "./", "输入文件(*);");
+    QString fileName = QFileDialog::getOpenFileName(this, "选择输入文件", "./", "输入文件(*)");
     if(!fileName.isEmpty())
     {
         ui->lineEdit_in->setText(fileName);
@@ -101,7 +101,7 @@ void Widget::on_but_in_clicked()
 
 void Widget::on_but_out_clicked()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "选择输出文件路径", ui->lineEdit_out->text(), "输出文件(*);");
+    QString fileName = QFileDialog::getSaveFileName(this, "选择输出文件路径", ui->lineEdit_out->text(), "输出文件(*)");
     if(!fileName.isEmpty())
     {
         ui->lineEdit_out->setText(fileName);
